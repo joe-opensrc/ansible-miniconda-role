@@ -1,0 +1,37 @@
+---
+# defaults file
+miniconda_download_dir: "/tmp/miniconda" 
+miniconda_root_prefix: "/opt/miniconda"
+
+miniconda_install_user: miniconda
+
+miniconda_bin: "{{ miniconda_root_prefix }}/condabin/conda"
+
+miniconda_base_url:           "https://repo.anaconda.com/miniconda"
+miniconda_download_name:      "Miniconda3-latest-Linux-x86_64.sh"
+miniconda_download_url:       "{{ miniconda_base_url }}/{{ miniconda_download_name }}"
+miniconda_download_name_full: "{{ miniconda_download_dir }}/{{ miniconda_download_name }}"
+
+miniconda_profile_shell: "{{ miniconda_root_prefix }}/etc/profile.d/conda.sh"
+miniconda_envs_dir: "{{ miniconda_root_prefix }}/envs"
+miniconda_import_dir: "{{ miniconda_root_prefix }}/import/ansible"
+
+miniconda_templates_dir:  "templates"
+miniconda_envs_template_dir: "{{ miniconda_templates_dir }}/envs"
+miniconda_envs_filter: "[ 'enabled/*.yml' ]"
+miniconda_envs_filelist: [] # used to retrieve files based on filter
+miniconda_purge_list: []
+
+miniconda_files_dir: "files/"
+miniconda_envs_quirks_dir: "tasks/envs/quirks"
+miniconda_quirks_filelist: [] # used to retrieve files based on filter 
+
+
+## TODO:
+# variable name cleanup / disambiguation
+# e.g., miniconda_envs_dir vs miniconda_envs_quirks_dir
+#       remote-dir vs localdir
+
+#miniconda.base_version: 3 # or nothing, signifying python version 2.7
+#miniconda.version: "latest"
+# can faff with version numbers, architectures and file suffixes later...

@@ -1,0 +1,13 @@
+#aggressive_update_packages:
+#  - ca-certificates
+#  - certifi
+
+auto_update_conda: false
+report_errors: false
+
+channel_priority: strict
+channels:
+  - conda-forge
+  - bioconda
+  - bih-cubi
+  - defaults

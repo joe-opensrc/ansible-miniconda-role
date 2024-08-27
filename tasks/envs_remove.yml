@@ -1,0 +1,44 @@
+---
+  
+- name: Output, hostname + purgelist
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname_short }}|{{ miniconda_purge_list }}"
+  when: 
+    - purge is defined
+    - purge | bool
+    - miniconda_purge_list is defined
+
+- name: Purge miniconda environments
+  ignore_errors: yes
+  register: destructo
+  ansible.builtin.shell: |
+    {{ miniconda_bin }} env remove -n {{ item }}
+  loop: "{{ miniconda_purge_list }}"
+  when: 
+    - purge is defined
+    - purge | bool
+    - miniconda_purge_list is defined
+    - miniconda_purge_list != [] 
+
+- name: Report on destructive actions
+  ansible.builtin.debug:
+    msg: "{{ destructo }}"
+
+- name: Check filesystem for purged envs
+  ignore_errors: yes
+  register: envs_purged
+  ansible.builtin.stat:
+    path: "{{ miniconda_envs_dir }}/{{ item }}"
+  loop: "{{ miniconda_purge_list }}"
+  failed_when: 
+    - envs_purged.stat.exists 
+
+- name: Report env purge on filesytem 
+  ignore_errors: yes
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname_short }}|{{ envs_purged.results[0].invocation.module_args.path }}|deleted:{{ not envs_purged.results[0].stat.exists }}" 
+  failed_when: "envs_purged.results[0].stat.exists"
+  when: "envs_purged.results[0] is defined"
+  
+  # loop: "{{ remote_env_files.files }}"
+  # failed_when: "envcreate.rc != 0 and not ( envcreate.rc == 1 and envcreate.stderr is match( '\nCondaValueError: prefix already exists.*' ) )"

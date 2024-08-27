@@ -1,0 +1,9 @@
+name: biotool-snpeff
+channels:
+  - conda-forge
+  - bioconda
+  - bih-cubi
+  - defaults
+dependencies:
+  - snpeff=5.1
+prefix: {{ miniconda_envs_dir }}/biotool-snpeff

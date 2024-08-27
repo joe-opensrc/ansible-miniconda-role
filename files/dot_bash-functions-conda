@@ -1,0 +1,7 @@
+
+#requires yq (pkg: python3-yq on suse)
+function conda_list_pkgs() { 
+  conda env export --from-history | yq --yml-output '.dependencies' | cut -c 3- 
+}
+
+source {{ miniconda_profile_shell }}

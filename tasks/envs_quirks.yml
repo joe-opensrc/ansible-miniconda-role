@@ -1,0 +1,12 @@
+---
+- name: Glob for quirks files
+  ansible.builtin.set_fact:
+    miniconda_quirks_filelist: "{{ lookup( 'fileglob', miniconda_envs_quirks_dir + '/' + ( item | basename ), wantlist=True ) + miniconda_quirks_filelist }}"
+  loop:
+    "{{ miniconda_envs_filter }}" # [ "*.yml", "20-some-file.yml", ... ]
+
+- name: Handle idio-diffs
+  register: quirks
+  include_tasks: "{{ item }}"
+  loop:
+    "{{ miniconda_quirks_filelist }}"

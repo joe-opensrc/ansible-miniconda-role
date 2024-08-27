@@ -1,0 +1,50 @@
+---
+# tasks file
+- name: Create download dir
+  become: yes
+  ansible.builtin.file:
+    state: directory
+    path: "{{ miniconda_download_dir }}"
+    owner: "{{ miniconda_install_user }}"
+    mode: 0755
+
+- name: Fetch Miniconda
+  ansible.builtin.get_url:
+    url: "{{ miniconda_download_url }}"
+    dest: "{{ miniconda_download_dir }}/{{ miniconda_download_name }}"
+    mode: 0755
+
+- name: Run the installer
+  register: install
+  ansible.builtin.command:
+    argv: [ "{{ miniconda_download_name_full }}", -b, -p, "{{ miniconda_root_prefix }}", "{{ miniconda_update_install | default(omit) }}"]
+  failed_when:
+    - install.rc != 0
+    - "'use the -u option.' not in install.stderr"
+  changed_when:
+    - "'use the -u option.' not in install.stderr"
+
+- name: Output, installer
+  ansible.builtin.debug:
+    msg: "{{ install }}"
+
+- name: Render template dot_condarc
+  become: yes
+  ansible.builtin.template:
+    src: "{{ miniconda_templates_dir }}/dot_condarc"
+    dest: "{{ miniconda_root_prefix }}/.condarc"
+    owner: "{{ miniconda_install_user }}"
+    group: conda
+    mode: 0664
+
+
+
+# - name: Set conda group permission on installation dir (recursively)
+#   become: yes
+#   ansible.builtin.file:
+#     state: directory
+#     recurse: yes
+#     path: "{{ miniconda_root_prefix }}"
+#     owner: "{{ miniconda_install_user }}"
+#     group: conda 
+#     mode: 0775

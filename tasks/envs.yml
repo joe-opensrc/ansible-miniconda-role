@@ -1,0 +1,57 @@
+---
+# tasks file
+- name: Create empty import dir for env templates (delete existing)
+  become: yes
+  ansible.builtin.file:
+    state: "{{ item }}"
+    owner: root
+    group: conda
+    mode: 0775
+    path: "{{ miniconda_import_dir }}"
+  loop:
+    - absent
+    - directory
+
+- name: Generate list of envs, templates
+  register: eloop
+  ansible.builtin.set_fact:
+    miniconda_envs_filelist: "{{ lookup( 'fileglob', miniconda_envs_template_dir + '/' + item, wantlist=True ) + miniconda_envs_filelist }}"
+  loop:
+    "{{ miniconda_envs_filter }}" # [ "*.yml", "20-some-file.yml", ... ]
+
+- name: Print env dir, output
+  ansible.builtin.debug:
+    msg: "{{ miniconda_import_dir }}"
+
+- name: Print envs filelist
+  ansible.builtin.debug:
+    msg: "{{ miniconda_envs_filelist }}"
+
+- name: Render template dot_condarc (also done at install)
+  become: yes
+  ansible.builtin.template:
+    src: "{{ miniconda_templates_dir }}/dot_condarc"
+    dest: "{{ miniconda_root_prefix }}/.condarc"
+    owner: "{{ miniconda_install_user }}"
+    group: conda
+    mode: 0644
+
+- name: Render template, per env into import dir
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ miniconda_import_dir }}"
+  loop: "{{ miniconda_envs_filelist }}"
+#  when: "item in miniconda_envs_filter or miniconda_envs_filter is undefined or miniconda_envs_filter is empty"
+
+- name: Generate list of envs, remote files
+  register: remote_env_files
+  ansible.builtin.find:
+    paths: "{{ miniconda_import_dir }}"
+    patterns: "*.yml"
+
+- name: Create envs from remote files
+  register: envcreate
+  ansible.builtin.shell: |
+    {{ miniconda_bin }} env create -f {{ item.path }}
+  loop: "{{ remote_env_files.files }}"
+  failed_when: "envcreate.rc != 0 and not ( envcreate.rc == 1 and envcreate.stderr is match( '\nCondaValueError: prefix already exists.*' ) )"

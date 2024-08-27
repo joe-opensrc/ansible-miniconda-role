@@ -1,0 +1,62 @@
+# getent issues; hence "shell"
+- name: Retrieve list of users in group conda
+  register: conda_group
+  ansible.builtin.shell: |
+    grep '^conda:' /etc/group | cut -d: -f4
+
+- name: Output, conda_group
+  ignore_errors: yes
+  ansible.builtin.debug:
+    msg: "{{ conda_group.stdout }}"
+  when: "conda_group.stdout is defined | default(omit)"
+
+- name: Create bashrc-conda symlink for users in group conda
+  become: yes
+  ignore_errors: yes
+  ansible.builtin.file:
+    state: link
+    src: "{{ miniconda_root_prefix }}/etc/profile.d/conda.sh"
+    dest: "~{{ item }}/.bashrc-conda-{{ miniconda_root_prefix | basename }}"
+  loop: "{{ conda_group.stdout.split(',') }}"
+  when:
+    - conda_group is defined
+    - conda_group.rc == 0
+    - conda_group.stdout is defined
+
+- name: Set perms on bashrc-conda symlink
+  become: yes
+  ignore_errors: yes
+  ansible.builtin.shell: chown "{{ miniconda_install_user}}:conda" "{{ miniconda_root_prefix }}/etc/profile.d/conda.sh"
+
+- name: Stat /etc/bash_completion.d
+  register: bashCompletion
+  become: yes
+  ansible.builtin.stat:
+    path: /etc/bash_completion.d
+
+- name: Add conda (bash) completion to /etc/bash_completion.d
+  become: yes
+  ansible.builtin.copy:
+    src: "{{ miniconda_files_dir }}/conda.cmpl"
+    dest: /etc/bash_completion.d/conda.cmpl
+  when: "bashCompletion.stat.isdir is defined and bashCompletion.stat.isdir"
+
+# file stuff last cos testing
+- name: Set ACLs on install dir
+  become: yes
+  ignore_errors: yes
+  ansible.builtin.acl:
+    state: present
+    default: yes
+    recursive: yes
+    path: "{{ miniconda_root_prefix }}"
+    entry: default:group:conda:rwX
+  when: not ( acl_test.rc == 1 and acl_test.stderr is defined and 'Operation not supported' in acl_test.stderr )
+
+- name: Set group perms on install dir recursivley (chmod+chgrp)
+  become: yes
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - find "{{ miniconda_root_prefix }}" -type d -exec chmod g+rwXs '{}' \;
+    - chgrp -R conda "{{ miniconda_root_prefix }}"
+

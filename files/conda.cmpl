@@ -1,0 +1,57 @@
+# Basic Conda (bash) Completion
+
+function _conda() {
+
+  local cur prev words cword EDIR
+  _init_completion || return 
+
+
+  if [[ -n ${CONDA_EXE} && -z ${EDIR} ]]
+  then
+    EDIR="$( realpath -e $( dirname ${CONDA_EXE} )/../envs )"
+  fi
+
+  if [[ -z ${EDIR} ]]
+  then
+   echo -ne "ERROR: Couldn't find conda 'envs' dir! Source .bashrc-conda? or set EDIR\n\n" >&2
+   return 2
+  fi
+
+  local cenv=""
+  cenv="$( find ${EDIR} -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null )"
+
+
+
+  case "${words[@]:0:${cword}}" in
+  # case "${prev}" in
+    "conda")
+      COMPREPLY+=( $( compgen -W "activate deactivate env install list search" -- "${cur}" ) )
+      return 0;;
+
+    "conda activate")
+      COMPREPLY+=( $( compgen -W "${cenv}" -- "${cur}" ) )
+      return 0;;
+
+    "conda install")
+      COMPREPLY="-n"
+      return 0;;
+
+    "conda list") 
+      COMPREPLY="-n"
+      return 0;;
+
+    *"-n")
+      COMPREPLY+=( $( compgen -W "${cenv}" -- "${cur}" ) )
+      return=0;;
+
+    "conda env")
+      COMPREPLY+=( $( compgen -W "create export list remove update config" -- "${cur}" ) )
+    
+
+  esac
+
+#  COMPREPLY=( $( compgen -W "-b -e" -- "${cur}" ) )
+
+} 
+
+complete -F _conda conda

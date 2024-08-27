@@ -1,0 +1,34 @@
+---
+# tasks file
+
+# fetch miniconda to download_dir of default('/tmp/miniconda')
+# install to install_dir or default('/opt/miniconda')
+# template condarc
+# template profile.d
+# for each user found in group: anaconda
+  # send condarc
+
+- import_tasks: user_wrangler.yml
+  tags: user
+
+- import_tasks: download_install.yml
+  tags: install
+
+- import_tasks: envs.yml
+  tags: envs
+
+- import_tasks: envs_quirks.yml
+  tags: quirks
+
+- import_tasks: file_wrangler.yml 
+  tags: files
+
+- name: Notify User
+  ansible.builtin.fail:
+    msg: "ATTENTION: Require '-e purge=true' via command line to allow purge of remote envs! (can also add --step)"
+  when: "purge is not defined"
+  tags: [ never, remove ]
+
+- import_tasks: envs_remove.yml
+  when: "purge is defined"
+  tags: [ never, remove ]

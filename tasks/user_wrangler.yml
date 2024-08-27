@@ -1,0 +1,54 @@
+---
+- name: Ensure user {{ miniconda_install_user }}
+  become: yes
+  ansible.builtin.user:
+    state: present
+    name: "{{ miniconda_install_user }}"
+
+- name: Create group conda
+  become: yes
+  ignore_errors: yes
+  ansible.builtin.group:
+    state: present
+    name: conda
+    gid:  "{{ 2100 | default(omit) }}"
+
+- name: Check acls are supported
+  register: acl_test
+  become: yes
+  ignore_errors: yes
+  ansible.posix.acl:
+    state: present
+    path: "{{ miniconda_root_prefix }}"
+    entry: g:conda:rwX
+
+- name: Report on acl_test
+  ansible.builtin.debug:
+    msg: "{{ miniconda_root_prefix }} => {{ acl_test }}"
+
+- name: Get user list from /etc/passwd (getent is compromised)
+  register: passwd_users
+  ansible.builtin.shell: |
+    cut -d':' -f 1 /etc/passwd
+
+- name: Add users to group, optional
+  become: yes
+  ansible.builtin.user:
+    state: present
+    append: yes
+    name: "{{ item }}"
+    groups: conda
+  loop: "{{ miniconda_lusers }}"
+  when: "miniconda_lusers is defined and passwd_users.stdout_lines is defined and item in passwd_users.stdout_lines"
+
+- name: Retrieve list of users in group conda
+  register: conda_group
+  ansible.builtin.shell: |
+    grep '^conda:' /etc/group | cut -d: -f4
+
+- name: Output, conda_group
+  ignore_errors: yes
+  ansible.builtin.debug:
+    msg: "{{ conda_group.stdout }}"
+  when: "conda_group.stdout is defined | default(omit)"
+

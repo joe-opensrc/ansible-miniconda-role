@@ -1,0 +1,5 @@
+name: python-zarr
+channels:
+  - anaconda
+dependencies:
+  - anaconda::zarr=2.13.3

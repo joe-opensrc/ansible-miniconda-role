@@ -1,0 +1,29 @@
+---
+- name: Info| Starting quirks task
+  ansible.builtin.debug:
+    msg: "Install some required files with the correct permissions"
+
+# Anything ansible can do, but how about...
+- name: Poll| find python user site
+  register: p_site_lib
+  become: yes
+  become_user: "{{ miniconda_install_user }}"
+  ansible.builtin.shell:  source "{{ miniconda_root_prefix }}/bin/activate" python-zarr && python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])' 
+
+- name: Info| Output registered p_site_lib variable
+  ansible.builtin.debug:
+    msg: "{{ p_site_lib.stdout }}"
+
+# - name: Fetch code/scripts from github (https)
+#   ansible.builtin.git:
+#     repo: https://github.com/some-user/some-repo.git
+#     dest: "{{ miniconda_envs_dir }}/python-zarr/path/to/some/library/folder/perhaps"
+#   environment:
+#     GIT_SSL_NO_VERIFY: true
+
+# - name: Action| Use the apps found in the conda environment... 
+#   become: yes
+#   become_user: "{{ miniconda_install_user }}"
+#   ansible.builtin.shell: |
+#     source "{{ miniconda_root_prefix }}"/bin/activate python-zarr && python -c '# ...'
+
