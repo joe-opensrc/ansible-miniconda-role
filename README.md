@@ -16,9 +16,9 @@ Role Variables
    - user     # symlink profile / bashrc for specified users
    - envs    # install environments from templated environment.yml files
 
- defaults/main.yml: 
+### defaults/main.yml: 
 
-    ```
+```
   miniconda_download_dir       := location of miniconda3 download  
   miniconda_root_prefix        := location of install prefix (e.g., "/opt/miniconda") 
 
